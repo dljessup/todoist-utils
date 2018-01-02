@@ -1,0 +1,9 @@
+# Virtual environment
+venv
+
+# Config file, which contains credentials and therefore shouldn't be saved to
+# repository
+config.ini
+
+# Vim swap files
+*.sw?
