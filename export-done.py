@@ -14,13 +14,7 @@ def get_api_token():
     return config['main']['api-key']
 
 
-@click.command()
-@click.option('--project', 'project_name', required=True)
-@click.option('--month', required=True)
-@click.option('--showtime', is_flag=True)
-def export_done(project_name, month, showtime):
-    api = TodoistAPI(get_api_token())
-    api.sync()
+def get_project_id(api, project_name):
     project_id = None
     for project in api.state['projects']:
         if project['name'] == project_name:
@@ -28,6 +22,19 @@ def export_done(project_name, month, showtime):
             break
     if project_id is None:
         raise LookupError('Project name not found.')
+    return project_id
+
+
+@click.command()
+@click.option('--project', 'project_name', required=True)
+@click.option('--month', required=True)
+@click.option('--showtime', is_flag=True)
+def export_done(project_name, month, showtime):
+    api = TodoistAPI(get_api_token())
+    api.sync()
+
+    project_id = get_project_id(api, project_name)
+
     heading = f'{project_name}: {month}'
     heading_border = len(heading) * '='
     print(heading_border)
