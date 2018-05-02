@@ -43,6 +43,8 @@ def get_completed_items(api, project_id, month):
     completed_items = []
     for item_id in completed_item_ids:
         item = api.items.get_by_id(item_id)
+        if item is None:
+            continue
         if type(item) == dict:
             item = item['item']
 
