@@ -52,6 +52,11 @@ def get_completed_items(api, project_id, month):
         # if the item is recurring or if the item was uncompleted after being completed.
         if item['in_history'] == 1:
             completed_items.append(item)
+
+        notes_activity = api.activity.get(
+            object_type='note', event_type='added', parent_item_id=item_id)
+        item['notes'] = [api.notes.get_by_id(note_action['object_id']) for note_action in notes_activity]
+
     return completed_items
 
 
@@ -97,6 +102,7 @@ def export_done(project_name, month, showtime):
         log_record = {
             'timestamp': item_datetime,
             'text': item['content'],
+            'notes': item['notes'],
         }
         log_date_section.append(log_record)
     for log_date in sorted(log_dates):
@@ -109,6 +115,12 @@ def export_done(project_name, month, showtime):
                 print(f"* [{record['timestamp'].strftime('%H:%M')}] {record['text']}")
             else:
                 print('* ' + record['text'])
+
+            if len(record['notes']) > 0:
+                print('')
+                for note in record['notes']:
+                    print(f"  - {note['content']}")
+                print('')
 
 
 if __name__ == '__main__':
