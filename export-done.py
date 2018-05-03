@@ -8,6 +8,29 @@ import click
 from todoist.api import TodoistAPI
 
 
+def get_note(api, note_id):
+    """Gets a note object from the Todoist web API.
+
+    We are using a custom function instead of the api.notes.get_by_id() method
+    because api.notes.get_by_id() is built for the notes to historical items,
+    and the Todoist Python API is designed around tracking the contents of live
+    items.
+    In particular, the api.notes.get_by_id() method returns Note objects in
+    some cases and raw dictionaries in others, with the desired data in
+    differing locations in the two, and this appears to be an artifact of local
+    storage of live items.
+
+    """
+    params = {'token': api.token,
+              'note_id': note_id,
+             }
+    response = api.session.get(api.get_api_url() + 'notes/get', params=params)
+    obj = response.json()
+    if 'error' in obj:
+        raise RuntimeError(repr(obj))
+    return obj['note']
+
+
 def get_api_token():
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -55,7 +78,7 @@ def get_completed_items(api, project_id, month):
 
         notes_activity = api.activity.get(
             object_type='note', event_type='added', parent_item_id=item_id)
-        item['notes'] = [api.notes.get_by_id(note_action['object_id']) for note_action in notes_activity]
+        item['notes'] = [get_note(api, note_action['object_id']) for note_action in notes_activity]
 
     return completed_items
 
