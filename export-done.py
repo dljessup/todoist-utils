@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import configparser
+from time import sleep
 
 import dateutil.parser
 
@@ -29,6 +30,32 @@ def get_note(api, note_id):
     if 'error' in obj:
         raise RuntimeError(repr(obj))
     return obj['note']
+
+
+def get_notes_activity(api, item_id):
+    url = api.get_api_url() + 'activity/get'
+    params = {'token': api.token,
+              'object_type': 'note',
+              'event_type': 'added',
+              'parent_item_id': item_id,
+              }
+    request_successful = False
+    attempts = 0
+    while not request_successful and attempts <= 12:
+        attempts += 1
+        response = api.session.get(url, params=params)
+        obj = response.json()
+        if 'error' in obj:
+            delay = obj.get('error_extra', {}).get('retry_after')
+            if delay is None:
+                raise RuntimeError(repr(obj))
+            else:
+                sleep(delay)
+        else:
+            request_successful = True
+    if not request_successful:
+        raise RuntimeError(repr(obj))
+    return obj
 
 
 def get_api_token():
@@ -76,8 +103,7 @@ def get_completed_items(api, project_id, month):
         if item['in_history'] == 1:
             completed_items.append(item)
 
-        notes_activity = api.activity.get(
-            object_type='note', event_type='added', parent_item_id=item_id)
+        notes_activity = get_notes_activity(api, item_id)
         try:
             item['notes'] = [get_note(api, note_action['object_id']) for note_action in notes_activity]
         except TypeError:
