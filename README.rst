@@ -23,3 +23,10 @@ export-done.py
 --------------
 
 Generates a report of completed tasks in a given project.
+
+--------------
+instantiate.py
+--------------
+
+Takes all recurring tasks due today and forks each, leaving a non-recurring
+task due today and a postponed recurring task.
