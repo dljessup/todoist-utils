@@ -78,7 +78,11 @@ def get_completed_items(api, project_id, month):
 
         notes_activity = api.activity.get(
             object_type='note', event_type='added', parent_item_id=item_id)
-        item['notes'] = [get_note(api, note_action['object_id']) for note_action in notes_activity]
+        try:
+            item['notes'] = [get_note(api, note_action['object_id']) for note_action in notes_activity]
+        except TypeError:
+            print(repr(notes_activity))
+            raise
 
     return completed_items
 
