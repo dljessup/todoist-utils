@@ -28,7 +28,7 @@ def get_project_id(api, project_name):
 
 
 def is_instantiable(task):
-    if 'every' not in task['date_string']:
+    if task['date_string'] is None or 'every' not in task['date_string']:
         return False
     task_date = dateutil.parser.parse(task['due_date_utc'])
     if task_date.astimezone(tz.tzlocal()).date() != datetime.date.today():
