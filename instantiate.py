@@ -2,6 +2,7 @@
 
 import configparser
 import datetime
+import logging
 
 import dateutil.parser
 from dateutil.tz import tz
@@ -52,20 +53,36 @@ def postpone_task(api, task):
 
 @click.command()
 @click.option('--project', 'project_name', required=True)
-def instantiate(project_name):
+@click.option('--loglevel', default='warning')
+def instantiate(project_name, loglevel):
     api = TodoistAPI(get_api_token())
     api.sync()
+
+    logging.basicConfig(level=getattr(logging, loglevel.upper()))
 
     project_id = get_project_id(api, project_name)
 
     tasks = api.projects.get_data(project_id)['items']
     instantiable_tasks = [task for task in tasks if is_instantiable(task)]
 
+    action_count = 0
+
     for task in instantiable_tasks:
         clone_task(api, task)
         postpone_task(api, task)
+        action_count += 2
 
-    api.commit()
+        # The Todoist API will reject a commit if there are more than 100
+        # changes bundled together.  Just to give myself some buffer in case
+        # I'm miscounting actions, I commit everytime the action count gets
+        # above 80.
+        if action_count > 80:
+            r = api.commit()
+            logging.debug(f"commit = {r!r}")
+            action_count = 0
+
+    r = api.commit()
+    logging.debug(f"commit = {r!r}")
 
 
 if __name__ == '__main__':
