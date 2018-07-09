@@ -32,9 +32,7 @@ def is_instantiable(task):
     if task['date_string'] is None or 'every' not in task['date_string'].lower():
         return False
     task_date = dateutil.parser.parse(task['due_date_utc'])
-    if task_date.astimezone(tz.tzlocal()).date() != datetime.date.today():
-        return False
-    return True
+    return task_date.astimezone(tz.tzlocal()).date() == datetime.date.today()
 
 
 def clone_task(api, task):
