@@ -28,11 +28,15 @@ def get_project_id(api, project_name):
     return project_id
 
 
-def is_instantiable(task):
+def is_instantiable(task, date=None):
+    instantiation_date = datetime.date.today() if date is None else date
     if task['date_string'] is None or 'every' not in task['date_string'].lower():
         return False
     task_date = dateutil.parser.parse(task['due_date_utc'])
-    return task_date.astimezone(tz.tzlocal()).date() == datetime.date.today()
+    logging.debug(f"task_date = {task_date!r}")
+    task_local_date = task_date.astimezone(tz.tzlocal()).date()
+    logging.debug(f"task_local_date = {task_local_date!r}")
+    return task_local_date == instantiation_date
 
 
 def clone_task(api, task):
@@ -52,7 +56,8 @@ def postpone_task(api, task):
 @click.command()
 @click.option('--project', 'project_name', required=True)
 @click.option('--loglevel', default='warning')
-def instantiate(project_name, loglevel):
+@click.option('--date', 'date_str')
+def instantiate(project_name, loglevel, date_str):
     api = TodoistAPI(get_api_token())
     api.sync()
 
@@ -60,8 +65,11 @@ def instantiate(project_name, loglevel):
 
     project_id = get_project_id(api, project_name)
 
+    date = dateutil.parser.parse(date_str).date()
+    logging.debug(f"date = {date!r}")
+
     tasks = api.projects.get_data(project_id)['items']
-    instantiable_tasks = [task for task in tasks if is_instantiable(task)]
+    instantiable_tasks = [task for task in tasks if is_instantiable(task, date)]
 
     action_count = 0
 
