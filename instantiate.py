@@ -65,7 +65,7 @@ def instantiate(project_name, loglevel, date_str):
 
     project_id = get_project_id(api, project_name)
 
-    date = dateutil.parser.parse(date_str).date()
+    date = None if date_str is None else dateutil.parser.parse(date_str).date()
     logging.debug(f"date = {date!r}")
 
     tasks = api.projects.get_data(project_id)['items']
