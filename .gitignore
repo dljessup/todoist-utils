@@ -7,3 +7,6 @@ config.ini
 
 # Vim swap files
 *.sw?
+
+# Python cache
+__pycache__/
