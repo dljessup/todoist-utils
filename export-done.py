@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import configparser
 from time import sleep
 
 import dateutil.parser
 
 import click
 from todoist.api import TodoistAPI
+
+from todoist_utils import get_api_token, get_project_id
 
 
 def get_note(api, note_id):
@@ -58,12 +59,6 @@ def get_notes_activity(api, item_id):
     return obj
 
 
-def get_api_token():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    return config['main']['api-key']
-
-
 def get_completed_items(api, project_id, month):
     # The naïve approach for the following code would be to simply return
     # api.items.get_completed(project_id).
@@ -111,17 +106,6 @@ def get_completed_items(api, project_id, month):
             raise
 
     return completed_items
-
-
-def get_project_id(api, project_name):
-    project_id = None
-    for project in api.state['projects']:
-        if project['name'] == project_name:
-            project_id = project['id']
-            break
-    if project_id is None:
-        raise LookupError('Project name not found.')
-    return project_id
 
 
 @click.command()
