@@ -8,11 +8,12 @@ def get_api_token():
 
 
 def get_project_id(api, project_name):
-    project_id = None
-    for project in api.state['projects']:
-        if project['name'] == project_name:
-            project_id = project['id']
-            break
-    if project_id is None:
+    project_ids = [project['id'] for project in api.state['projects'] if project['name'] == project_name]
+
+    if len(project_ids) == 0:
         raise LookupError('Project name not found.')
-    return project_id
+
+    if len(project_ids) > 1:
+        raise LookupError('Multiple projects found: {}'.format(project_ids))
+
+    return project_ids[0]
