@@ -81,9 +81,7 @@ def sync(project_name, source_filename, dry_run, loglevel):
             else:
                 api_item = api.items.add(content=source_item['content'], project_id=project_id)
 
-        source_label_ids = [labels[name] for name in source_item['labels']]
-
-        logging.debug('update: {}: {}: {}: {}'.format(api_item, source_item['date'], i, source_label_ids))
+        source_label_ids = [labels[name] for name in source_item.get('labels', [])]
 
         if source_item['date'] != api_item['date_string']:
             logging.debug('update date string: {}: {}'.format(api_item, source_item['date']))
