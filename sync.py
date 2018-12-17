@@ -84,8 +84,20 @@ def sync(project_name, source_filename, dry_run, loglevel):
         source_label_ids = [labels[name] for name in source_item['labels']]
 
         logging.debug('update: {}: {}: {}: {}'.format(api_item, source_item['date'], i, source_label_ids))
+
+        if source_item['date'] != api_item['date_string']:
+            logging.debug('update date string: {}: {}'.format(api_item, source_item['date']))
+            if not dry_run:
+                api_item.update(date_string=source_item['date'])
+
+        if i != api_item['item_order']:
+            logging.debug('update item order: {}: {}'.format(api_item, i))
+            if not dry_run:
+                api_item.update(item_order=i)
+
+        logging.debug('update labels: {}: {}'.format(api_item, source_label_ids))
         if not dry_run:
-            api_item.update(date_string=source_item['date'], item_order=i, labels=source_label_ids)
+            api_item.update(labels=source_label_ids)
 
         source_notes = source_item.get('notes', [])
         api_notes = project_notes.get(api_item['id'], [])
