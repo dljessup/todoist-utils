@@ -9,6 +9,14 @@ import yaml
 from todoist_utils import get_api_token, get_project_id
 
 
+def pseudomap_get(mapping, attr, default=None):
+    try:
+        attr_value = mapping[attr]
+    except KeyError:
+        attr_value = default
+    return attr_value
+
+
 # priority should always be 4
 # indent should always be 1
 # author should always be David (41563)
@@ -46,12 +54,16 @@ def sync(project_name, source_filename, dry_run, loglevel):
 
     project_notes = {}
     for note in api.state['notes']:
-        if note['project_id'] != project_id or note['is_archived'] == 1:
+        logging.debug('note = {!r}'.format(note))
+        note_project_id = pseudomap_get(note, 'project_id')
+        note_is_archived = pseudomap_get(note, 'is_archived')
+        note_item_id = pseudomap_get(note, 'item_id')
+        if note_project_id != project_id or note_is_archived == 1:
             continue
-        if note['item_id'] in project_notes:
-            project_notes[note['item_id']].append(note)
+        if note_item_id in project_notes:
+            project_notes[note_item_id].append(note)
         else:
-            project_notes[note['item_id']] = [note]
+            project_notes[note_item_id] = [note]
     logging.debug('project_notes = {!r}'.format(project_notes))
 
     labels = {label['name']: label['id'] for label in api.state['labels']}
@@ -63,6 +75,7 @@ def sync(project_name, source_filename, dry_run, loglevel):
 
     api_model = []
     i = 0
+    prev_day_order = None
     for source_item in source_model:
         i += 1
         if source_item['content'] in project_items:
@@ -83,15 +96,26 @@ def sync(project_name, source_filename, dry_run, loglevel):
 
         source_label_ids = [labels[name] for name in source_item.get('labels', [])]
 
-        if source_item['date'] != api_item['date_string']:
+        api_date_string = pseudomap_get(api_item, 'date_string')
+        if source_item['date'] != api_date_string:
             logging.debug('update date string: {}: {}'.format(api_item, source_item['date']))
             if not dry_run:
                 api_item.update(date_string=source_item['date'])
 
-        if i != api_item['item_order']:
+        api_item_order = pseudomap_get(api_item, 'item_order')
+        if i != api_item_order:
             logging.debug('update item order: {}: {}'.format(api_item, i))
             if not dry_run:
                 api_item.update(item_order=i)
+
+        api_day_order = pseudomap_get(api_item, 'day_order')
+        new_day_order = api_day_order
+        if prev_day_order is not None and api_day_order < prev_day_order:
+            logging.debug('update day order: {}: {}'.format(api_item, prev_day_order))
+            new_day_order = prev_day_order + 1
+            if not dry_run:
+                api_item.update(day_order=new_day_order)
+        prev_day_order = new_day_order
 
         logging.debug('update labels: {}: {}'.format(api_item, source_label_ids))
         if not dry_run:
@@ -121,6 +145,7 @@ def sync(project_name, source_filename, dry_run, loglevel):
         if not dry_run:
             api_item.delete()
     if not dry_run:
+        logging.debug('run commit')
         api.commit()
 
 
